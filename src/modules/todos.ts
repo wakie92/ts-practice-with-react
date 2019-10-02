@@ -1,31 +1,51 @@
-const ADD_TODO = 'todos/ADD_TODO' as const;
-const TOGGLE_TODO = 'todos/TOGGLE_TODO' as const;
-const REMOVE_TODO = 'todos/REMOVE_TODO' as const;
+import {
+  createStandardAction,
+  createAction,
+  ActionType,
+  createReducer,
+} from 'typesafe-actions';
+
+const ADD_TODO = 'todos/ADD_TODO';
+const TOGGLE_TODO = 'todos/TOGGLE_TODO';
+const REMOVE_TODO = 'todos/REMOVE_TODO';
 
 let nextid = 1;
 
-export const addTodo = (text: string) => ({
-  type: ADD_TODO,
-  payload: {
-    id: nextid++,
-    text,
-  },
-});
+export const addTodo = createAction(
+  ADD_TODO,
+  action => (text: string) =>
+    action({
+      id: nextid++,
+      text,
+    }),
+);
 
-export const removeTodo = (id: number) => ({
-  type: REMOVE_TODO,
-  payload: id,
-});
+export const removeTodo = createStandardAction(REMOVE_TODO)<number>();
+export const toggleTodo = createStandardAction(TOGGLE_TODO)<number>();
 
-export const toggleTodo = (id: number) => ({
-  type: TOGGLE_TODO,
-  payload: id,
-});
+// export const addTodo = (text: string) => ({
+//   type: ADD_TODO,
+//   payload: {
+//     id: nextid++,
+//     text,
+//   },
+// });
 
-type TodoAction =
-  | ReturnType<typeof removeTodo>
-  | ReturnType<typeof addTodo>
-  | ReturnType<typeof toggleTodo>;
+// export const removeTodo = (id: number) => ({
+//   type: REMOVE_TODO,
+//   payload: id,
+// });
+
+// export const toggleTodo = (id: number) => ({
+//   type: TOGGLE_TODO,
+//   payload: id,
+// });
+const actions = {
+  removeTodo,
+  addTodo,
+  toggleTodo,
+}
+type TodoAction = ActionType<typeof actions>;
 
 export type Todo = {
   id: number;
@@ -35,26 +55,10 @@ export type Todo = {
 export type TodoState = Todo[];
 const initialState: TodoState = [];
 
-function todos(state: TodoState = initialState, action: TodoAction): TodoState {
-  switch (action.type) {
-    case ADD_TODO: {
-      return state.concat({
-        id: action.payload.id,
-        text: action.payload.text,
-        done: false,
-      });
-    }
-    case REMOVE_TODO: {
-      return state.filter(todo => todo.id !== action.payload);
-    }
-    case TOGGLE_TODO: {
-      return state.map(todo => todo.id === action.payload ? {
-        ...todo,
-        done: !todo.done
-      } :  todo );
-    }
-    default:
-      return state;
-  }
-}
+const todos = createReducer<TodoState, TodoAction>(initialState, {
+  [ADD_TODO]: (state, action) => state.concat({...action.payload, done: false}),
+  [TOGGLE_TODO]: (state, { payload: id }) =>
+    state.map(todo => todo.id === id ? { ...todo, done: !todo.done } : todo ),
+  [REMOVE_TODO]: (state, { payload: id }) => state.filter(todo => todo.id !== id),
+})
 export default todos;
